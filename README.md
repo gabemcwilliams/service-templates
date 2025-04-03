@@ -1,6 +1,3 @@
-### 💾 Here's Your Upgraded `README.md`
-
-```markdown
 # 🛠️ service-templates
 
 This repository contains a curated set of infrastructure and service templates designed for local development, internal
