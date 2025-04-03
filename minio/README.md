@@ -109,7 +109,3 @@ MINIO_CONSOLE_ADDRESS=":9001"
 - SSL is terminated at Nginx for public traffic, MinIO runs on internal ports only.
 - Console UI is proxied and not directly exposed.
 
----
-
-You now have a README that won’t give people flashbacks to `crontab -e`. Want a separate `minio.env` template too?
-```
