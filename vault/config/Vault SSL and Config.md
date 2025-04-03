@@ -1,56 +1,70 @@
-# Vault SSL and Configuration
+## 🔐 Vault SSL Configuration
 
-## Step 1: Store and Secure Certificates
+This guide details how to manually extract and configure Vault’s TLS certificates using a previously issued multi-SAN
+certificate. This step is critical for securing Vault’s API and UI with HTTPS.
 
-Extract and copy certificate details from `multi_san_cert.txt` into separate files.
+---
 
-### Create the Vault certificate directory:
+### 📁 Step 1: Extract and Store Certificate Files
+
+Start by creating a dedicated directory for Vault certificates:
+
 ```sh
 mkdir -p /mnt/data/swarm/certs/vault
 cd /mnt/data/swarm/certs/vault
 ```
 
-### Open the cert file for manual extraction:
+Open your issued certificate bundle (e.g., `multi_san_cert.txt`) and extract the relevant sections into separate files:
+
 ```sh
 nano multi_san_cert.txt
 ```
 
-### Extract and copy the relevant sections:
-```sh
-nano ca_chain.crt    # Copy the CA chain
-nano ca.crt          # Copy only the Root CA
-nano private.key     # Copy the Private Key
-nano public.crt      # Copy the Server Certificate
-```
+Copy each section into its own file:
 
-### Secure Certificate Permissions:
+- `ca_chain.crt` – Full certificate chain
+- `ca.crt` – Root Certificate Authority
+- `private.key` – Vault's private key
+- `public.crt` – Vault's server certificate
+
+Set appropriate file permissions:
+
 ```sh
 sudo chmod 600 private.key
 sudo chmod 644 public.crt ca.crt ca_chain.crt
 ```
 
-## Step 2: Configure Vault for TLS
+---
 
-Modify Vault's configuration file:
+### ⚙️ Step 2: Configure Vault to Use TLS
+
+Edit Vault’s configuration:
+
 ```sh
 sudo nano /etc/vault.d/vault.hcl
 ```
-Ensure the following settings:
+
+Update the `listener` block with your certificate paths:
+
 ```hcl
 listener "tcp" {
-  address = "0.0.0.0:8200"
-  tls_cert_file = "/mnt/data/swarm/certs/vault/public.crt"
-  tls_key_file = "/mnt/data/swarm/certs/vault/private.key"
+  address            = "0.0.0.0:8200"
+  tls_cert_file      = "/mnt/data/swarm/certs/vault/public.crt"
+  tls_key_file       = "/mnt/data/swarm/certs/vault/private.key"
   tls_client_ca_file = "/mnt/data/swarm/certs/vault/ca.crt"
 }
 ```
 
-### Restart Vault to Apply Changes:
+Save and restart the Vault service:
+
 ```sh
 sudo systemctl restart vault
 ```
 
 ---
 
-**Next:** Proceed to [Nginx SSL and Configuration](#) to integrate Vault's certificates into Nginx.
+✅ If the service restarts without errors and responds over `https://vault.example.internal:8200`, your SSL configuration
+is complete.
+
+> **Next:** Proceed to [Nginx SSL and Configuration](#) to apply Vault-issued certificates to Nginx.
 

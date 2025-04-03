@@ -1,38 +1,43 @@
-# Vault PKI Setup - Multi-SAN Certificate Approach
+## 🔐 Vault PKI Configuration (Multi-SAN Certificate Setup)
 
-## Step 1: Enable & Configure Vault PKI
+This guide outlines the setup of HashiCorp Vault as a root Certificate Authority (CA) using the built-in PKI secrets
+engine. Certificates are issued with multi-SAN support and used across Vault, Nginx, and MinIO for TLS encryption.
 
-This setup enables Vault’s PKI, issues TLS certificates, and integrates them into Vault, MinIO, and Nginx for secure communications.
+### ⚙️ Step 1: Enable and Configure Vault PKI
 
-### Enable the PKI secrets engine:
+Enable the `pki` secrets engine and configure its maximum TTL:
+
 ```sh
 vault secrets enable pki
-```
-
-### Set maximum certificate lease duration (10 years):
-```sh
 vault secrets tune -max-lease-ttl=87600h pki
 ```
 
-## Step 2: Generate Root CA
+### 🏛️ Step 2: Generate a Root Certificate Authority (CA)
 
-### Create a self-signed Root CA valid for 10 years:
+Create a self-signed root certificate valid for 10 years:
+
 ```sh
 vault write pki/root/generate/internal \
     common_name="example.internal" \
     ttl="87600h"
 ```
 
-### Configure Certificate Authority (CA) URLs:
+Set the issuing and CRL distribution URLs:
+
 ```sh
 vault write pki/config/urls \
     issuing_certificates="http://vault.example.internal:8200/v1/pki/ca" \
     crl_distribution_points="http://vault.example.internal:8200/v1/pki/crl"
 ```
 
-## Step 3: Define Certificate Issuance Roles
+### 🛂 Step 3: Define Certificate Roles
 
-### Multi-SAN Role (for Core Services):
+Define certificate issuance roles to control SANs and TTLs.
+
+#### 🔹 Internal Services Role
+
+Supports multiple specific service domains:
+
 ```sh
 vault write pki/roles/internal-services \
     allowed_domains="example.internal,vault.example.internal,minio.example.internal,db.example.internal,internal" \
@@ -41,7 +46,10 @@ vault write pki/roles/internal-services \
     max_ttl="8760h"
 ```
 
-### Wildcard Role (for Applications Supporting Wildcards):
+#### 🔸 Wildcard Role
+
+Used for apps that support wildcard certs:
+
 ```sh
 vault write pki/roles/wildcard-internal \
     allowed_domains="example.internal" \
@@ -50,16 +58,21 @@ vault write pki/roles/wildcard-internal \
     max_ttl="8760h"
 ```
 
-## Step 4: Issue Multi-SAN Certificates
+### 📜 Step 4: Issue a Multi-SAN TLS Certificate
 
-### Issue a TLS certificate with multiple SANs:
+Example certificate issuance with multiple Subject Alternative Names:
+
 ```sh
 vault write pki/issue/internal-services \
     common_name="example.internal" \
     alt_names="vault.example.internal,minio.example.internal,db.example.internal,*.example.internal" \
-    ttl="8760h" 
+    ttl="8760h"
 ```
+
+> This certificate can be used across services that require SSL termination, simplifying trust configuration and
+> reducing cert sprawl.
 
 ---
 
-**Next:** Proceed to [Vault SSL and Configuration](#) to extract and configure certificates.
+**Next:** Proceed to [Vault SSL and Configuration](#) for extraction, file placement, and integration into system
+services.

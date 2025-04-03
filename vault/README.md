@@ -1,12 +1,34 @@
+
 # Vault Service Overview
+
+This repo contains a Dockerized setup of HashiCorp Vault designed for local or internal infrastructure use. It features:
+
+- **S3-compatible storage (MinIO)**
+- **Auto-unseal via AWS KMS**
+- **Optional TLS via Vault-issued certificates**
+- **No regrets (well, fewer)**
+
+---
+
+## 📁 Repo Structure
+
+| Folder        | Purpose                                      |
+|---------------|----------------------------------------------|
+| `install/`    | One-time setup scripts (Vault init, CA setup)|
+| `config/`     | SSL certificate setup guides and PKI details |
+| `policies/`   | Vault ACL policies                           |
+| `compose.yaml`| Vault service and dependencies (Docker)      |
+
 
 ## Purpose
 
 This setup provides a **locally hosted Vault instance** for secure secret management, configured to use:
 
-- **S3 (MinIO)** as backend storage
-- **AWS KMS** for auto-unseal
+- **S3 (MinIO)** as backend storage  
+- **AWS KMS** for auto-unseal  
 - TLS certificates (but optionally disabled for local testing)
+
+---
 
 ## Key Features
 
@@ -17,23 +39,46 @@ This setup provides a **locally hosted Vault instance** for secure secret manage
 
 ---
 
+## Environment Variables (`vault.env`)
+
+This file is ignored in version control but must be created and sourced at runtime.  
+These are passed into the Vault container and used to configure S3 and KMS access.
+
+```env
+# MinIO (S3 backend)
+VAULT_S3_BUCKET=vault
+VAULT_S3_ACCESS_KEY=data_root
+VAULT_S3_SECRET_KEY=
+VAULT_S3_ENDPOINT=http://minio.internal:9000
+
+# AWS KMS (auto-unseal)
+VAULT_KMS_REGION=
+VAULT_KMS_KEY_ID=
+VAULT_KMS_ACCESS_KEY=
+VAULT_KMS_SECRET_KEY=
+```
+
+> 💡 **Note:** You must fill in the blank values or inject them at runtime. No one wants a Vault that can’t open.
+
+---
+
 ## Configuration Summary
 
-### Vault Settings
+### Vault Core Settings
 
 | Setting         | Value                              |
 |-----------------|------------------------------------|
 | `api_addr`      | `http://vault.internal:8200`       |
 | `ui`            | `true`                             |
-| `disable_mlock` | `true` (avoid using in production) |
+| `disable_mlock` | `true` (bad, but okay for local)   |
 
 ---
 
-### Storage (S3 via MinIO)
+### S3 Storage (MinIO)
 
 ```hcl
 storage "s3" {
-  bucket              = "vault"
+  bucket              = "vault"  # From env
   access_key          = "PLACEHOLDER_ACCESS_KEY"
   secret_key          = "PLACEHOLDER_SECRET_KEY"
   endpoint            = "http://minio.internal:9000"
@@ -43,28 +88,27 @@ storage "s3" {
 }
 ```
 
-> 📝 This config uses `disable_ssl = true` and `scheme = "https"` which can feel contradictory. It's fine for MinIO, but
-> in prod you'd fix this.
+> 📝 SSL is technically disabled, but the `scheme = "https"` stays because MinIO doesn’t care. Weird? Yes. It works? Also yes.
 
 ---
 
-### Listener
+### Listener (TCP)
 
 ```hcl
 listener "tcp" {
   address       = "0.0.0.0:8200"
   tls_cert_file = "/etc/vault.d/public.crt"
   tls_key_file  = "/etc/vault.d/private.key"
-  tls_disable   = 1  # HTTP only. Don't do this outside your basement.
+  tls_disable   = 1
 }
 ```
 
-- `tls_disable = 1` makes this a **non-TLS** endpoint.
-- Great for testing, terrible for production.
+- TLS is disabled (`tls_disable = 1`) to keep dev setups simple.
+- Do not expose this config to the public internet unless your favorite hobby is regret.
 
 ---
 
-### Seal with AWS KMS
+### Auto-Unseal with AWS KMS
 
 ```hcl
 seal "awskms" {
@@ -76,8 +120,8 @@ seal "awskms" {
 }
 ```
 
-- Automatically unseals Vault using AWS KMS.
-- Replace placeholders with valid credentials and key ID.
+- All secrets above are expected to come from environment variables (`vault.env`)
+- KMS must be reachable and properly configured.
 
 ---
 
@@ -87,32 +131,42 @@ seal "awskms" {
 ha_enabled = true
 ```
 
-- This turns on HA mode. Totally harmless in dev unless you're clustering Vault.
-
----
-
-## Security Warnings (Because I Care)
-
-- `disable_mlock = true`: Makes startup easier, but sacrifices security.
-- `tls_disable = 1`: Just don't expose this outside Docker or localhost.
-- Do not commit real keys in this config. Use env vars or templates.
-- Avoid storing this file in plain text with real credentials.
+You’re running solo now, but HA mode is enabled to make future scaling less of a headache.
 
 ---
 
 ## Launch Checklist
 
-- ✅ Replace placeholders with actual secret values (or env var references).
-- ✅ Configure your TLS certs (or don’t if you enjoy risk).
-- ✅ Make sure MinIO and KMS are reachable.
-- ✅ Initialize and unseal Vault (unless KMS takes care of it).
+- ✅ `.env` and `vault.env` are defined and injected
+- ✅ Certs exist and match hostnames (or TLS is off for dev)
+- ✅ MinIO is running and the `vault` bucket exists
+- ✅ KMS is reachable and has the key configured
+- ✅ Vault has been initialized and unsealed at least once
 
 ---
 
-## Access Vault
+## Start Vault
 
 ```bash
-VAULT_ADDR=http://vault.internal:8200 vault status
+docker compose up -d
 ```
 
-Or open in your browser: [http://vault.internal:8200](http://vault.internal:8200)
+## Access Vault
+
+Web UI: [http://vault.internal:8200](http://vault.internal:8200)
+
+CLI:
+
+```bash
+export VAULT_ADDR=http://vault.internal:8200
+vault status
+```
+
+---
+
+## ⚠️ Security Warnings
+
+- `disable_mlock = true`: Don't do this in production unless you love RAM leaks.
+- `tls_disable = 1`: Only use for local dev in sealed boxes, preferably your basement.
+- Avoid committing real values—use `vault.env`, `docker secrets`, or go touch grass.
+- If Vault can't unseal, you’ll have to manually initialize/unseal it again. Don't panic.

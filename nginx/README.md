@@ -75,3 +75,52 @@ This setup routes traffic securely to the following internal services:
 - Configuration is optimized for stability and security out of the box.
 - This setup is ideal for local development, lab environments, or self-hosted dashboards.
 
+
+```text
+                     ┌────────────────────────────┐
+                     │       External Clients      │
+                     └────────────────────────────┘
+                               │  HTTPS (443)
+                               ▼
+                        ┌───────────────┐
+                        │    NGINX      │
+                        │  Reverse Proxy│
+                        └───────────────┘
+                               │
+   ┌─────────────┬─────────────┼──────────────────────┬─────────────┐
+   ▼             ▼             ▼                      ▼             ▼
+┌────────┐   ┌────────┐   ┌───────────┐          ┌──────────┐   ┌─────────┐
+│ Vault  │   │ MinIO  │   │ PgAdmin   │          │ Portainer│   │ Chirp...│
+│ .internal │ │ .internal │ │ .internal │          │ .internal│   │ .internal│
+└────────┘   └────────┘   └───────────┘          └──────────┘   └─────────┘
+     │           │              │                     │               │
+     ▼           ▼              ▼                     ▼               ▼
+vault.internal:8200   minio.internal:9000   pgadmin.internal:4100  chirpstack.internal:9382
+        │              │                          │                │
+        ▼              ▼                          ▼                ▼
+  Vault Server    MinIO Console/API         PostgreSQL UI      LoRaWAN Dashboard
+
+   ┌────────────┬──────────────┬────────────┬────────────┬────────────┐
+   ▼            ▼              ▼            ▼            ▼
+Grafana   Prometheus    MLflow     Kafka     RedisInsight
+.internal  .internal    .internal  .internal .internal
+
+→ Services running on various ports internally:
+- Vault → 8200
+- MinIO → 9000/9001
+- PgAdmin → 4100
+- Grafana → 3000
+- Prometheus → 9030
+- MLflow → 5001
+- RedisInsight → 5540
+- Kafka → 9092
+- Kafka-UI → 8080
+- Portainer → 9443
+- Docker Registry → 5000
+
+→ All proxied via Nginx using:
+- Wildcard TLS cert for *.example.internal
+- Dedicated subdomains per service
+- Optional websocket upgrades and header manipulation
+
+
