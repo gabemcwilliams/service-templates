@@ -1,10 +1,4 @@
-Okay, yeah… that’s not a README — that’s an environment config file with stage directions and commentary. It's like trying to pass your grocery list off as a cookbook.
 
-Let’s upgrade it into a real `README.md`, while still keeping all your juicy setup details — organized like someone might actually want to read it without squinting at a wall of `#`s.
-
----
-
-```md
 # MinIO Configuration (Linux)
 
 This document outlines the configuration used to deploy **MinIO** on a Linux system with secure access, SSL termination, and integration with Nginx for internal development and storage services.
