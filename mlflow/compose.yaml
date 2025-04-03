@@ -1,0 +1,36 @@
+services:
+  mlflow:
+    image: docker-registry.example.internal:5000/mlflow_python3.12:latest
+    container_name: mlflow
+    hostname: mlflow.example.internal
+    restart: unless-stopped
+    networks:
+      machine_learning:
+        ipv4_address: 10.0.10.5
+    ports:
+      - "5010:5000"  # MLflow UI
+    extra_hosts:
+      - "minio.example.internal:192.168.55.13"  # MinIO backend
+      - "db.example.internal:192.168.55.13"  # PostgreSQL backend
+      - "host.docker.internal:172.17.0.1"  # Host network access
+    volumes:
+      - "${CERTS_DIR}/public.crt:/mlflow/public.crt:ro"
+      - "${CERTS_DIR}/private.key:/mlflow/private.key:ro"
+      - "${CERTS_DIR}/ca.crt:/mlflow/ca.crt:ro"
+      - "${CERTS_DIR}/ca.crt:/usr/local/share/ca-certificates/ca.crt:ro"  # Vault authentication
+      - "${STORAGE_DIR}/mlflow:/mlflow/data"  # MLflow storage location on host
+    env_file:
+      - .env
+      - mlflow.env
+    command: ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000"]
+    #    command: [ "/bin/sh", "-c","tail -f /dev/null" ]
+
+
+networks:
+  machine_learning:
+    name: machine_learning
+    external: false
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.10.0/24

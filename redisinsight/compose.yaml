@@ -1,0 +1,27 @@
+services:
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    environment:
+      - REDISINSIGHT_HOST=10.0.80.2
+      - REDISINSIGHT_PORT=6379
+    networks:
+      redis:
+        ipv4_address: 10.0.80.3
+    volumes:
+      - redis-insight:/data
+    restart: unless-stopped
+
+volumes:
+  redis-insight:
+
+
+networks:
+  redis:
+    name: redis
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.0.80.0/24"

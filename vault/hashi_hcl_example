@@ -1,0 +1,30 @@
+ui            = true
+api_addr      = "http://vault.internal:8200"
+disable_mlock = true
+
+storage "s3" {
+  bucket              = "vault"  # This will be overridden by env vars
+  access_key          = "PLACEHOLDER_ACCESS_KEY"
+  secret_key          = "PLACEHOLDER_SECRET_KEY"
+  endpoint            = "http://minio.internal:9000"
+  scheme              = "https"
+  s3_force_path_style = true
+  disable_ssl     = true
+}
+
+listener "tcp" {
+  address       = "0.0.0.0:8200"
+  tls_cert_file = "/etc/vault.d/public.crt"
+  tls_key_file  = "/etc/vault.d/private.key"
+  tls_disable   = 1  # Allows HTTP (INSECURE, only for local testing)
+}
+
+seal "awskms" {
+  region     = "us-west-2"
+  kms_key_id = "PLACEHOLDER_KMS_KEY_ID"
+  access_key = "PLACEHOLDER_KMS_ACCESS_KEY"
+  secret_key = "PLACEHOLDER_KMS_SECRET_KEY"
+  disabled   = false
+}
+
+ha_enabled = true

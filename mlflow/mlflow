@@ -1,0 +1,29 @@
+# -----------------------------------------------------------------------------
+# MLflow Environment Configuration - Tracking Backend
+# -----------------------------------------------------------------------------
+# Used by the MLflow server to define backend storage and artifact store
+# -----------------------------------------------------------------------------
+
+# Artifact storage location (MinIO bucket)
+MLFLOW_SERVER_DEFAULT_ARTIFACT_ROOT=s3://mlflow
+
+# MinIO credentials (make sure these are secured or pulled from a secret manager)
+AWS_ACCESS_KEY_ID="{{ AWS_ACCESS_KEY_ID }}"
+AWS_SECRET_ACCESS_KEY="{{ AWS_SECRET_ACCESS_KEY }}"
+
+# S3-compatible MinIO endpoint
+S3_ENDPOINT_URL="https://{{ MINIO_HOST }}:9000"
+AWS_REGION=us-west-2
+
+# PostgreSQL connection string for metadata tracking (MLflow backend store)
+MLFLOW_SERVER_BACKEND_STORE_URI="postgresql://mlflow_user:{{ POSTGRES_PASSWORD }}@{{ DB_HOST }}:5432/mlflow?sslmode=require&sslrootcert=/mlflow/ca.crt&sslcert=/mlflow/public.crt&sslkey=/mlflow/private.key"
+
+
+# -----------------------------------------------------------------------------
+# MLflow Environment Configuration - Client Tracking URI
+# -----------------------------------------------------------------------------
+# Used by MLflow CLI or Python clients to talk to the tracking server.
+# -----------------------------------------------------------------------------
+
+# Uncomment to set client-facing tracking URI (i.e. where mlflow.log_param() goes)
+# MLFLOW_TRACKING_URI=https://{{ MLFLOW_TRACKING_HOST }}

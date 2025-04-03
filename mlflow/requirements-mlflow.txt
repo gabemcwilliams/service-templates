@@ -1,0 +1,21 @@
+######## Databases ########
+psycopg2-binary  # PostgreSQL driver (if using PostgreSQL for tracking)
+SQLAlchemy  # ORM for database interactions
+alembic  # Database migration tool for SQLAlchemy
+minio  # MinIO for artifact storage (if using MinIO)
+
+######## MLOps / Observability ########
+mlflow  # MLFlow for experiment tracking and model management
+
+######## Secrets & Security ########
+hvac  # HashiCorp Vault client (for secrets management, if needed)
+
+######## Web Frameworks ########
+flask  # Web framework (MLFlow UI is built with Flask)
+gunicorn  # WSGI server (if you want to serve the MLFlow UI with a WSGI server)
+
+######## Data Handling ########
+pandas  # Data manipulation (useful for MLFlow experiments)
+
+######## Logging ########
+loguru  # Better logging (optional, for logging inside the container)
